@@ -1,8 +1,10 @@
-// ARQUIVO: editar_page.dart (VERSÃO ORIGINAL RESTAURADA)
 import 'package:flutter/material.dart';
+// importa o banco de dados
 import '../database/db_helper.dart';
+// importa a app bar personalizada
 import '../widgets/custom_app_bar.dart';
 
+// cria a tela Editar
 class EditarPage extends StatefulWidget {
   const EditarPage({super.key});
 
@@ -11,10 +13,16 @@ class EditarPage extends StatefulWidget {
 }
 
 class _EditarPageState extends State<EditarPage> {
+  // Lista que vai guardar as lojas
   List<Map<String, dynamic>> lojas = [];
+
+  // aqui salva os produtos de cada loja separadinho
   Map<int, List<Map<String, dynamic>>> produtosPorLoja = {};
+
+  //controla se o formulario da loja ta aparecendo ou não
   bool mostrarFormularioLoja = false;
 
+  // controladores pra pegar o que o usuario digita
   final _nomeCtrl = TextEditingController();
   final _localCtrl = TextEditingController();
   final _imgCtrl = TextEditingController();
@@ -22,17 +30,20 @@ class _EditarPageState extends State<EditarPage> {
   final _latCtrl = TextEditingController();
   final _longCtrl = TextEditingController();
 
+  // id da loja
   int? lojaEditandoId;
 
+  // controladores para os produtos
   final Map<int, Map<String, TextEditingController>> produtoCtrls = {};
   final Map<int, int?> produtoEditandoId = {};
 
   @override
   void initState() {
     super.initState();
-    _carregarDados();
+    _carregarDados(); // chama pra puxar os dados do banco quando a tela abre
   }
 
+  // carrega lojas e produtos do banco
   Future<void> _carregarDados() async {
     final db = await DBHelper.database;
     lojas = await db.query('lojas');
@@ -43,6 +54,7 @@ class _EditarPageState extends State<EditarPage> {
       final produtos = await db.query('produtos', where: 'lojaId = ?', whereArgs: [lojaId]);
       produtosPorLoja[lojaId] = produtos;
 
+      // cria os controladores para preencher depois
       produtoCtrls[lojaId] = {
         'nome': TextEditingController(),
         'descricao': TextEditingController(),
@@ -52,9 +64,10 @@ class _EditarPageState extends State<EditarPage> {
       produtoEditandoId[lojaId] = null;
     }
 
-    setState(() {});
+    setState(() {}); // atualiza a tela
   }
 
+  // preenche o formulario com os dados da loja
   void _preencherFormularioLoja(Map<String, dynamic> loja) {
     lojaEditandoId = loja['id'];
     _nomeCtrl.text = loja['nome'];
@@ -66,6 +79,7 @@ class _EditarPageState extends State<EditarPage> {
     setState(() => mostrarFormularioLoja = true);
   }
 
+  // salva uma nova loja ou atualiza uma loja ja criada
   Future<void> _salvarLoja() async {
     try {
       final db = await DBHelper.database;
@@ -79,9 +93,9 @@ class _EditarPageState extends State<EditarPage> {
       };
 
       if (lojaEditandoId == null) {
-        await db.insert('lojas', dados);
+        await db.insert('lojas', dados); // cria nova loja
       } else {
-        await db.update('lojas', dados, where: 'id = ?', whereArgs: [lojaEditandoId]);
+        await db.update('lojas', dados, where: 'id = ?', whereArgs: [lojaEditandoId]); // atualiza loja existente
       }
 
       _limparFormularioLoja();
@@ -91,6 +105,7 @@ class _EditarPageState extends State<EditarPage> {
     }
   }
 
+  // limpa o formulario de loja
   void _limparFormularioLoja() {
     lojaEditandoId = null;
     mostrarFormularioLoja = false;
@@ -102,6 +117,7 @@ class _EditarPageState extends State<EditarPage> {
     _longCtrl.clear();
   }
 
+  // deleta a loja
   Future<void> _deletarLoja(int id) async {
     final db = await DBHelper.database;
     await db.delete('produtos', where: 'lojaId = ?', whereArgs: [id]);
@@ -109,6 +125,7 @@ class _EditarPageState extends State<EditarPage> {
     await _carregarDados();
   }
 
+  // salva ou edita um produto novo
   Future<void> _salvarProduto(int lojaId) async {
     final db = await DBHelper.database;
     final ctrls = produtoCtrls[lojaId]!;
@@ -128,18 +145,21 @@ class _EditarPageState extends State<EditarPage> {
       await db.update('produtos', dados, where: 'id = ?', whereArgs: [editId]);
     }
 
+    // limpa os campos dos produtos
     ctrls.forEach((_, c) => c.clear());
     produtoEditandoId[lojaId] = null;
 
     await _carregarDados();
   }
 
+  // deleta um produto do banco
   Future<void> _deletarProduto(int id) async {
     final db = await DBHelper.database;
     await db.delete('produtos', where: 'id = ?', whereArgs: [id]);
     await _carregarDados();
   }
 
+  // preenche o formulario pra editar o produto
   void _editarProduto(Map<String, dynamic> produto, int lojaId) {
     final ctrls = produtoCtrls[lojaId]!;
     ctrls['nome']!.text = produto['nome'];
@@ -150,20 +170,23 @@ class _EditarPageState extends State<EditarPage> {
     setState(() {});
   }
 
+  // aqui começa o layout da página
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: CustomAppBar(tituloPagina: 'Editar'),
+      appBar: CustomAppBar(tituloPagina: 'Editar'), // nossa app bar personalizada
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             ElevatedButton(
+              // botão pra mostrar ou esconder o formulario de loja
               onPressed: () => setState(() => mostrarFormularioLoja = !mostrarFormularioLoja),
               child: Text(mostrarFormularioLoja ? 'Cancelar' : 'Nova Loja'),
             ),
             if (mostrarFormularioLoja)
               Card(
+                // formulario para adicionar/editar loja
                 elevation: 3,
                 margin: const EdgeInsets.symmetric(vertical: 12),
                 child: Padding(
@@ -187,6 +210,7 @@ class _EditarPageState extends State<EditarPage> {
                 ),
               ),
             const Divider(),
+            // aqui ele lista todas as lojas
             ...lojas.map((loja) {
               final id = loja['id'];
               final produtos = produtosPorLoja[id] ?? [];
@@ -214,6 +238,7 @@ class _EditarPageState extends State<EditarPage> {
                         ),
                       ),
                       const SizedBox(height: 8),
+                      // campos pra adicionar novo produto
                       TextFormField(controller: ctrls['nome'], decoration: const InputDecoration(labelText: 'Nome do Produto')),
                       TextFormField(controller: ctrls['descricao'], decoration: const InputDecoration(labelText: 'Descrição')),
                       TextFormField(controller: ctrls['preco'], decoration: const InputDecoration(labelText: 'Preço')),
@@ -224,6 +249,7 @@ class _EditarPageState extends State<EditarPage> {
                         child: Text(produtoEditandoId[id] == null ? 'Adicionar Produto' : 'Salvar Produto'),
                       ),
                       const SizedBox(height: 8),
+                      // lista todos os produtos da loja
                       ...produtos.map((p) => ListTile(
                         title: Text(p['nome']),
                         subtitle: Text(p['descricao']),

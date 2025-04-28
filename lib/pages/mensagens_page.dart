@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/custom_app_bar.dart';
-
+// Essa pagina está mockada, sera uma implementação futura que recebera os dados do banco do usario ques ta logado,
+//A ideia é concluir ela depois que o sistema de login estiver funcionando
 class MensagensPage extends StatefulWidget {
   const MensagensPage({super.key});
 
